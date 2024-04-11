@@ -15,23 +15,23 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
 
-     postgres:
-        # Docker Hub image
-        image: postgres:16
-        # Provide the password for postgres
-        env:
-          POSTGRES_PASSWORD: 123456
-          POSTGRES_DB: simple_bank
-        # Set health checks to wait until postgres has started
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          # Maps tcp port 5432 on service container to the host
-          - 5432:5432
-          
+    postgres:
+      # Docker Hub image
+      image: postgres:16
+      # Provide the password for postgres
+      env:
+        POSTGRES_PASSWORD: 123456
+        POSTGRES_DB: simple_bank
+      # Set health checks to wait until postgres has started
+      options: >-
+        --health-cmd pg_isready
+        --health-interval 10s
+        --health-timeout 5s
+        --health-retries 5
+      ports:
+        # Maps tcp port 5432 on service container to the host
+        - 5432:5432
+
     steps:
     - uses: actions/checkout@v3
 
