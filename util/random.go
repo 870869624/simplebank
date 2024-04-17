@@ -1,12 +1,15 @@
 package util
 
 import (
+	"fmt"
 	"math/rand"
 	"strings"
 	"time"
 )
 
 const alphabet = "abcdefghijklmnopqrstuvwxyz"
+
+const number = "1234567890"
 
 func init() {
 	rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -28,6 +31,17 @@ func RandomString(n int) string {
 	return sb.String()
 }
 
+// 生成随机数字
+func RandomNum(n int) string {
+	var sb strings.Builder
+	k := len(number)
+	for i := 0; i < n; i++ {
+		c := number[rand.Intn(k)]
+		sb.WriteByte(c)
+	}
+	return sb.String()
+}
+
 // 获取字母
 func RandomOwner() string {
 	return RandomString(6)
@@ -41,5 +55,10 @@ func RandomMoney() int64 {
 func RandomCurrency() string {
 	currencies := []string{"EUR", "USD", "RMB"}
 	n := len(currencies)
-	return RandomString(rand.Intn(n))
+	return currencies[rand.Intn(n)]
+}
+
+func RandomEmail() string {
+	email := fmt.Sprintf("%s@qq.com", RandomNum(9))
+	return email
 }

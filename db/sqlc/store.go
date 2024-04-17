@@ -6,20 +6,26 @@ import (
 	"fmt"
 )
 
-type Store struct {
+// 为了实现模拟数据库创建的借口，实现了查询的所有方法，也实现了交易的方法
+type Store interface {
+	TransferTX(ctx context.Context, arg TransferTXParams) (TransferTXResult, error)
+	Querier
+}
+
+type SQLStore struct {
 	*Queries
 	db *sql.DB
 }
 
-func NewStore(db *sql.DB) *Store {
-	return &Store{
+func NewStore(db *sql.DB) Store {
+	return &SQLStore{
 		Queries: New(db),
 		db:      db,
 	}
 }
 
 // 在数据库事务中执行函数
-func (s *Store) execTx(ctx context.Context, fn func(*Queries) error) error {
+func (s *SQLStore) execTx(ctx context.Context, fn func(*Queries) error) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -56,7 +62,7 @@ type TransferTXResult struct {
 var txkey = struct{}{}
 
 // 具体的支付数据库处理事件， 创建了支付记录，更新账户金额
-func (store *Store) TransferTX(ctx context.Context, arg TransferTXParams) (TransferTXResult, error) {
+func (store *SQLStore) TransferTX(ctx context.Context, arg TransferTXParams) (TransferTXResult, error) {
 	var result TransferTXResult
 	err := store.execTx(ctx, func(q *Queries) error {
 		var err error

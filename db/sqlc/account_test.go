@@ -13,8 +13,10 @@ import (
 )
 
 func createRandomAccount(t *testing.T) Account {
+	user := createRandomUser(t)
+
 	arg := CreateAccountParams{
-		Owner:    util.RandomOwner(),
+		Owner:    user.Username,
 		Balance:  util.RandomMoney(),
 		Currency: util.RandomCurrency(),
 	}
@@ -103,3 +105,10 @@ func TestDeleteAccount(t *testing.T) {
 	require.EqualError(t, err, sql.ErrNoRows.Error())
 	require.Empty(t, account2)
 }
+
+// func TestGetAccountForUpdate(t *testing.T) {
+// 	account1 := createRandomAccount(t)
+// 	arg := createRandomAccount(t)
+
+// 	account, err := testQueries.GetAccountForUpdate(context.Background(), account1.ID)
+// }
