@@ -24,7 +24,10 @@ func main() {
 	}
 
 	store := db.NewStore(connection) //初始化
-	server := api.NewServer(store)
+	server, err := api.NewServer(config, store)
+	if err != nil {
+		log.Fatal("不能新建服务", err)
+	}
 
 	err = server.Start(config.ServerAddress)
 	if err != nil {

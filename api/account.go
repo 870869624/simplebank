@@ -2,15 +2,16 @@ package api
 
 import (
 	"database/sql"
+	"errors"
 	"net/http"
 	db "simplebank/db/sqlc"
+	"simplebank/token"
 
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 )
 
 type createAccountRequest struct {
-	Owner    string `json:"owner" binding:"required"`
 	Currency string `json:"currency" binding:"required,currency"`
 }
 type getAccountRequest struct {
@@ -25,8 +26,10 @@ func (server *Server) createAccount(ctx *gin.Context) {
 		return
 	}
 
+	authPayload := ctx.MustGet(authorizationHeaderKey).(*token.Payload) //记这个
+
 	arg := db.CreateAccountParams{
-		Owner:    req.Owner,
+		Owner:    authPayload.Username,
 		Currency: req.Currency,
 		Balance:  0,
 	}
@@ -63,7 +66,13 @@ func (server *Server) getAccount(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
+	authPayload := ctx.MustGet(authorizationHeaderKey).(*token.Payload)
 
+	if account.Owner != authPayload.Username {
+		err := errors.New("查询账户与该账户不服符")
+		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
 	ctx.JSON(http.StatusOK, account)
 }
 
@@ -79,7 +88,14 @@ func (server *Server) listAccount(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
-	accounts, err := server.store.ListAccount(ctx, db.ListAccountParams{Limit: req.Pagesize, Offset: (req.PageID - 1) * req.Pagesize})
+
+	authPayload := ctx.MustGet(authorizationHeaderKey).(*token.Payload)
+	arg := db.ListAccountParams{
+		Owner:  authPayload.Username,
+		Limit:  req.Pagesize,
+		Offset: (req.PageID - 1) * req.Pagesize,
+	}
+	accounts, err := server.store.ListAccount(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return

@@ -1,16 +1,18 @@
 package util
 
 import (
-	"fmt"
+	"time"
 
 	"github.com/spf13/viper"
 )
 
 // 保存环境变量
 type Config struct {
-	DBDriver      string `mapstructure:"DB_DRIVER"`
-	DBSource      string `mapstructure:"DB_SOURCE"`
-	ServerAddress string `mapstructure:"SERVER_ADDRESS"`
+	DBDriver           string        `mapstructure:"DB_DRIVER"`
+	DBSource           string        `mapstructure:"DB_SOURCE"`
+	ServerAddress      string        `mapstructure:"SERVER_ADDRESS"`
+	TokenKey           string        `mapstructure:"TOKEN_KEY"`
+	AcessTokenDuration time.Duration `mapstructure:"ACESS_TOKEN_DURATION"`
 }
 
 func LoadConfig(path string) (config Config, err error) {
@@ -26,6 +28,6 @@ func LoadConfig(path string) (config Config, err error) {
 	}
 
 	err = viper.Unmarshal(&config)
-	fmt.Println(config)
+	// fmt.Println(config)
 	return
 }

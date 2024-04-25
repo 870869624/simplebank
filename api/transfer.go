@@ -2,9 +2,11 @@ package api
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 	db "simplebank/db/sqlc"
+	"simplebank/token"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,13 +25,25 @@ func (server *Server) createTransfer(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
+
 	//检查传输币种是否匹配
-	if !server.validAccount(ctx, req.From_account_id, req.Currency) {
+	fromAccount, valid := server.validAccount(ctx, req.From_account_id, req.Currency)
+	if !valid {
 		return
 	}
-	if !server.validAccount(ctx, req.To_account_id, req.Currency) {
+	//要转账的账户不是这个登陆的账户
+	authPayload := ctx.MustGet(authorizationHeaderKey).(*token.Payload)
+	if fromAccount.Owner != authPayload.Username {
+		err := errors.New("要转账的账户不是这个登陆的账户")
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
+
+	_, valid = server.validAccount(ctx, req.To_account_id, req.Currency)
+	if !valid {
+		return
+	}
+
 	arg := db.TransferTXParams{
 		FromAccountID: req.From_account_id,
 		ToAccountID:   req.To_account_id,
@@ -45,21 +59,21 @@ func (server *Server) createTransfer(ctx *gin.Context) {
 }
 
 // 检查两个账户的currency是否相同
-func (server *Server) validAccount(ctx *gin.Context, accountID int64, currency string) bool {
+func (server *Server) validAccount(ctx *gin.Context, accountID int64, currency string) (db.Account, bool) {
 	account, err := server.store.GetAccount(ctx, accountID)
 	//err不为空存在两种情况，没有找到或者网络错误
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
-			return false
+			return account, false
 		}
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return false
+		return account, false
 	}
 	if account.Currency != currency {
 		err := fmt.Errorf("账户[%d]币种不匹配[%s][%s]", accountID, account.Currency, currency)
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		return false
+		return account, false
 	}
-	return true
+	return account, false
 }
